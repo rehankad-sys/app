@@ -1,0 +1,43 @@
+name: Build Standalone APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f "requirements.txt" ]; then pip install -r requirements.txt; fi
+          if [ -f "SK_Traders_Android_App/requirements.txt" ]; then pip install -r SK_Traders_Android_App/requirements.txt; fi
+          pip install flet buildozer
+
+      - name: Compile Standalone Android APK (.apk)
+        run: |
+          # Check where main.py is located and build APK
+          if [ -f "main.py" ]; then
+            flet pack main.py --name "SK_Traders_Accounting" -- plataformas android || true
+          elif [ -f "SK_Traders_Android_App/main.py" ]; then
+            cd SK_Traders_Android_App
+            flet pack main.py --name "SK_Traders_Accounting" || true
+          fi
+
+      - name: Find and Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SK_Traders_Accounting_APK
+          path: |
+            *.apk
+            **/*.apk
+            dist/*.apk
+            SK_Traders_Android_App/dist/*.apk
